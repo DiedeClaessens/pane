@@ -89,6 +89,11 @@ import WebKit
         commandBar = nil
     }
 
+    /// Opens a pane:<address> link, sent by the "Open in Pane" shortcut, in a new tab.
+    func open(paneLink link: URL) {
+        go(to: link.absoluteString.replacing(/^pane:/, with: ""), in: .newTab)
+    }
+
     func showCommandBar(_ mode: CommandBar) {
         showsSidebar = false
         commandBar = mode

@@ -50,6 +50,14 @@ private func tabsFile() -> URL {
     #expect(browser.selected?.url?.host() == "a.com")
 }
 
+@Test func aPaneLinkOpensItsAddressInANewTab() {
+    let browser = Browser(file: tabsFile())
+    browser.open(URL(string: "https://a.com")!)
+    browser.open(paneLink: URL(string: "pane:https://b.com/x?y=1")!)
+    #expect(browser.tabs.map { $0.url?.host() } == ["a.com", "b.com"])
+    #expect(browser.selected?.url == URL(string: "https://b.com/x?y=1"))
+}
+
 @Test func nextTabWrapsAround() {
     let browser = Browser(file: tabsFile())
     browser.open(URL(string: "https://a.com")!)

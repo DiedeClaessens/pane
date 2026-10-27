@@ -47,6 +47,12 @@ Pane is a personal iPad browser in the style of Zen's compact mode: the page fil
 - Closing the current tab selects the next one, or the previous one when it was the last.
 - Open tabs and the current tab are saved when the app leaves the foreground and restored on launch. Restored tabs only load when you open them.
 
+## Opening links from other apps
+
+- Pane cannot be the default browser, because Apple only grants that entitlement to published browsers. Tapping a link in another app still opens the default browser.
+- Instead, the "Open in Pane" shortcut (`shortcuts/Open in Pane.shortcut`) sits in the share sheet. It takes the shared link, puts `pane:` in front of it, and opens that. Pane opens the address in a new tab.
+- The format is `pane:https://...` without `//` after `pane:`. With `pane://https://...`, iPadOS reads `https` as the host and rewrites the rest of the address.
+
 ## Keyboard
 
 Cmd+T new tab, Cmd+L open location, Cmd+W close tab, Cmd+S sidebar, Cmd+[ back, Cmd+] forward, Cmd+R reload, Ctrl+Tab and Ctrl+Shift+Tab next and previous tab.

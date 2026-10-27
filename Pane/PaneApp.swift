@@ -7,6 +7,7 @@ struct PaneApp: App {
     var body: some Scene {
         WindowGroup {
             BrowserView(browser: browser)
+                .onOpenURL { browser.open(paneLink: $0) }
         }
         .commands {
             CommandGroup(replacing: .newItem) {

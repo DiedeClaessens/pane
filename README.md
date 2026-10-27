@@ -13,6 +13,12 @@ A personal iPad browser with nothing on screen but the page, like Zen's compact 
 
 With a free Apple ID the app stops opening after 7 days. Press Run again to reinstall it. Your tabs and logins stay.
 
+## Open links from other apps in Pane
+
+Pane cannot be the default browser. To send a link to it, AirDrop `shortcuts/Open in Pane.shortcut` to the iPad, or open it on a Mac signed in to the same iCloud account, and add it to Shortcuts. Check that "Show in Share Sheet" is on in its details. Then share a link from any app and pick "Open in Pane".
+
+To build the shortcut by hand instead, make a shortcut that receives URLs from the share sheet, with two actions: Text with `pane:` followed by the Shortcut Input, then Open URLs with that Text.
+
 ## Automatic reinstall
 
 `scripts/reinstall-ipad.sh` rebuilds Pane and reinstalls it on the iPad, so the 7-day signature never runs out. When Pane's signing profile has less than two days left, the script removes it so Xcode fetches a new one. A launch agent runs the script every day at 13:10, or when the Mac wakes up if it was asleep then. It needs the Mac logged in, and the iPad on the cable or on the same Wi-Fi. The log is in `~/Library/Logs/pane-reinstall.log`.
