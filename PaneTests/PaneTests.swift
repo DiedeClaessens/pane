@@ -158,23 +158,6 @@ private func tap(_ title: String, in alert: UIAlertController) {
     alert.perform(NSSelectorFromString("_dismissWithAction:"), with: alert.actions.first { $0.title == title })
 }
 
-@Test(.timeLimit(.minutes(1))) func anAlertRightAfterAConfirmShows() async throws {
-    let window = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow)
-    let browser = Browser(file: tabsFile())
-    browser.open(URL(string: "about:blank")!)
-    let page = try #require(browser.selected).page
-    for try await _ in page.load(html: "<p>Hello</p>") {}
-    let host = UIHostingController(rootView: BrowserView(browser: browser))
-    let previous = window.rootViewController
-    window.rootViewController = host
-    defer { window.rootViewController = previous }
-    async let done = page.callJavaScript("return confirm('one') && (alert('two'), 'answered')") as? String
-    defer { browser.closeDialog(ok: false) }
-    tap("OK", in: try await shownAlert(in: host, saying: "one"))
-    tap("OK", in: try await shownAlert(in: host, saying: "two"))
-    #expect(try await done == "answered")
-}
-
 @Test(.timeLimit(.minutes(1))) func windowOpenOpensATab() async throws {
     let browser = Browser(file: tabsFile())
     browser.open(URL(string: "about:blank")!)
@@ -195,20 +178,39 @@ private func tap(_ title: String, in alert: UIAlertController) {
     #expect(browser.dialog == nil)
 }
 
-@Test func darkPagesLeaveThePageOwnColorSchemeAlone() async throws {
-    let window = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow)
-    let browser = Browser(file: tabsFile())
-    let darkPages = browser.darkPages
-    browser.darkPages = true
-    defer { browser.darkPages = darkPages }
-    browser.open(URL(string: "about:blank")!)
-    let page = try #require(browser.selected).page
-    let host = UIHostingController(rootView: BrowserView(browser: browser))
-    host.overrideUserInterfaceStyle = .light
-    let previous = window.rootViewController
-    window.rootViewController = host
-    defer { window.rootViewController = previous }
-    for try await _ in page.load(html: "<p>Hello</p>") {}
-    try await Task.sleep(for: .milliseconds(500))
-    #expect(try await page.callJavaScript("return matchMedia('(prefers-color-scheme: dark)').matches") as? Bool == false)
+@Suite(.serialized) struct OnScreen {
+    @Test(.timeLimit(.minutes(1))) func anAlertRightAfterAConfirmShows() async throws {
+        let window = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow)
+        let browser = Browser(file: tabsFile())
+        browser.open(URL(string: "about:blank")!)
+        let page = try #require(browser.selected).page
+        for try await _ in page.load(html: "<p>Hello</p>") {}
+        let host = UIHostingController(rootView: BrowserView(browser: browser))
+        let previous = window.rootViewController
+        window.rootViewController = host
+        defer { window.rootViewController = previous }
+        async let done = page.callJavaScript("return confirm('one') && (alert('two'), 'answered')") as? String
+        defer { browser.closeDialog(ok: false) }
+        tap("OK", in: try await shownAlert(in: host, saying: "one"))
+        tap("OK", in: try await shownAlert(in: host, saying: "two"))
+        #expect(try await done == "answered")
+    }
+
+    @Test func darkPagesLeaveThePageOwnColorSchemeAlone() async throws {
+        let window = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow)
+        let browser = Browser(file: tabsFile())
+        let darkPages = browser.darkPages
+        browser.darkPages = true
+        defer { browser.darkPages = darkPages }
+        browser.open(URL(string: "about:blank")!)
+        let page = try #require(browser.selected).page
+        let host = UIHostingController(rootView: BrowserView(browser: browser))
+        host.overrideUserInterfaceStyle = .light
+        let previous = window.rootViewController
+        window.rootViewController = host
+        defer { window.rootViewController = previous }
+        for try await _ in page.load(html: "<p>Hello</p>") {}
+        try await Task.sleep(for: .milliseconds(500))
+        #expect(try await page.callJavaScript("return matchMedia('(prefers-color-scheme: dark)').matches") as? Bool == false)
+    }
 }
