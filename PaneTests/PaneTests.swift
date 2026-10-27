@@ -172,3 +172,13 @@ private func tap(_ title: String, in alert: UIAlertController) {
     tap("OK", in: try await shownAlert(in: host, saying: "two"))
     #expect(try await done == "answered")
 }
+
+@Test(.timeLimit(.minutes(1))) func windowOpenOpensATab() async throws {
+    let browser = Browser(file: tabsFile())
+    browser.open(URL(string: "about:blank")!)
+    let page = try #require(browser.selected).page
+    for try await _ in page.load(html: "<p>Hello</p>") {}
+    _ = try await page.callJavaScript("window.open('https://b.com/x')")
+    while browser.tabs.count < 2 { try await Task.sleep(for: .milliseconds(10)) }
+    #expect(browser.selected?.url == URL(string: "https://b.com/x"))
+}

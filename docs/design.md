@@ -43,7 +43,8 @@ Pane is a personal iPad browser in the style of Zen's compact mode: the page fil
 ## Tabs
 
 - New tabs open right after the current tab and become the current tab.
-- Links that open a new window (`target="_blank"`, `window.open`) open in a new tab.
+- Links that open a new window (`target="_blank"`, `window.open`) open in a new tab. WebPage cannot create windows, so a small script turns `window.open` into a new-window link. The page gets no handle to the new tab, so sign-in popups that talk back to the page that opened them do not work.
+- A new tab is a page of its own. When a tapped link in a frame opens one, that tab may open another app like any page.
 - Closing the current tab selects the next one, or the previous one when it was the last.
 - Open tabs and the current tab are saved when the app leaves the foreground and restored on launch. Restored tabs only load when you open them.
 

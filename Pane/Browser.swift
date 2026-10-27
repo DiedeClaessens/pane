@@ -173,9 +173,19 @@ final class Tab: Identifiable {
 
     private func installScripts() {
         scripts.removeAllUserScripts()
+        scripts.addUserScript(WKUserScript(source: Self.windowOpen, injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .page))
         guard darkPages else { return }
         scripts.addUserScript(WKUserScript(source: Self.darkReader, injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient))
     }
+
+    /// WebPage cannot create windows, so `window.open` would return null and open nothing.
+    /// It clicks a new-window link instead, which opens a tab. The page gets no handle to that tab.
+    private static let windowOpen = """
+        window.open = url => {
+            if (url) Object.assign(document.createElement("a"), { href: url, target: "_blank" }).click();
+            return null;
+        };
+        """
 
     /// Dark Reader (darkreader.js, MIT, from the darkreader npm package), turned on.
     /// Its fetch loads stylesheets from other hosts. A bare `fetch` would lose `this` and fail.
