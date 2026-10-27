@@ -47,6 +47,13 @@ Pane is a personal iPad browser in the style of Zen's compact mode: the page fil
 - Closing the current tab selects the next one, or the previous one when it was the last.
 - Open tabs and the current tab are saved when the app leaves the foreground and restored on launch. Restored tabs only load when you open them.
 
+## Page dialogs and links
+
+- A page's `alert`, `confirm` and `prompt` show as a system alert. A newer dialog cancels an older one that is still open.
+- A file field opens the Files picker. Pane copies the picked files to its temporary folder and gives the page the copies. There is no separate photo library or camera option.
+- Links that WebKit cannot load, such as `mailto:` and `tel:`, open in their own app.
+- A page that asks for the camera or microphone gets the system permission prompt.
+
 ## Opening links from other apps
 
 - Pane cannot be the default browser, because Apple only grants that entitlement to published browsers. Tapping a link in another app still opens the default browser.

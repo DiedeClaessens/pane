@@ -104,3 +104,28 @@ private func tabsFile() -> URL {
     #expect(browser.commandBar == nil)
     #expect(browser.selected?.url.host() == "a.com")
 }
+
+@Test func aPageCanAskToConfirm() async throws {
+    let browser = Browser(file: tabsFile())
+    browser.open(URL(string: "about:blank")!)
+    let page = try #require(browser.selected).page
+    for try await _ in page.load(html: "<p>Hello</p>") {}
+    async let answer = page.callJavaScript("return confirm('Leave?')") as? Bool
+    while browser.dialog == nil { try await Task.sleep(for: .milliseconds(10)) }
+    #expect(browser.dialog?.message == "Leave?")
+    browser.closeDialog(ok: true)
+    #expect(try await answer == true)
+}
+
+@Test func aPagePromptGetsTheTypedText() async throws {
+    let browser = Browser(file: tabsFile())
+    browser.open(URL(string: "about:blank")!)
+    let page = try #require(browser.selected).page
+    for try await _ in page.load(html: "<p>Hello</p>") {}
+    async let answer = page.callJavaScript("return prompt('Name?', 'Ann')") as? String
+    while browser.dialog == nil { try await Task.sleep(for: .milliseconds(10)) }
+    #expect(browser.dialog?.text == "Ann")
+    browser.dialog?.text = "Bo"
+    browser.closeDialog(ok: true)
+    #expect(try await answer == "Bo")
+}

@@ -1,5 +1,5 @@
-import Foundation
 import Observation
+import UIKit
 import WebKit
 
 final class Tab: Identifiable {
@@ -34,6 +34,10 @@ final class Tab: Identifiable {
     private(set) var selectedID: Tab.ID?
     var showsSidebar = false
     var commandBar: CommandBar?
+    /// A page's alert, confirm or prompt, waiting for an answer.
+    var dialog: Dialog?
+    /// A page's file field, waiting for files.
+    var fileRequest: FileRequest?
     var searchEngine = SearchEngine(rawValue: UserDefaults.standard.string(forKey: "searchEngine") ?? "") ?? .google {
         didSet { UserDefaults.standard.set(searchEngine.rawValue, forKey: "searchEngine") }
     }
@@ -114,6 +118,34 @@ final class Tab: Identifiable {
         page.load(item)
     }
 
+    /// Answers the open dialog. A prompt answers with the dialog's text.
+    func closeDialog(ok: Bool) {
+        let dialog = dialog
+        self.dialog = nil
+        dialog?.answer(ok ? dialog?.text : nil)
+    }
+
+    /// Hands the picked files to the page. Nil cancels.
+    func closeFileRequest(_ files: [URL]?) {
+        let request = fileRequest
+        fileRequest = nil
+        request?.answer(files)
+    }
+
+    fileprivate func ask(_ kind: Dialog.Kind, _ message: String, text: String = "") async -> String? {
+        closeDialog(ok: false)
+        return await withCheckedContinuation { answer in
+            dialog = Dialog(kind: kind, message: message, text: text) { answer.resume(returning: $0) }
+        }
+    }
+
+    fileprivate func askForFiles(multiple: Bool) async -> [URL]? {
+        closeFileRequest(nil)
+        return await withCheckedContinuation { answer in
+            fileRequest = FileRequest(multiple: multiple) { answer.resume(returning: $0) }
+        }
+    }
+
     func save() {
         let saved = Saved(tabs: tabs.map { Saved.Tab(url: $0.url, title: $0.title) }, selected: tabs.firstIndex { $0.id == selectedID })
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -134,7 +166,8 @@ final class Tab: Identifiable {
     private func makeTab(url: URL, title: String = "") -> Tab {
         var configuration = WebPage.Configuration()
         configuration.userContentController = scripts
-        return Tab(page: WebPage(configuration: configuration, navigationDecider: NewWindowsAsTabs { [weak self] in self?.open($0) }), url: url, title: title)
+        let page = WebPage(configuration: configuration, navigationDecider: Links { [weak self] in self?.open($0) }, dialogPresenter: Dialogs(browser: self))
+        return Tab(page: page, url: url, title: title)
     }
 
     private func installScripts() {
@@ -182,13 +215,57 @@ enum SearchEngine: String, CaseIterable, Identifiable {
     var queryName: String { self == .startpage ? "query" : "q" }
 }
 
+struct Dialog {
+    enum Kind { case alert, confirm, prompt }
+
+    let kind: Kind
+    let message: String
+    var text: String
+    /// Nil is Cancel.
+    let answer: (String?) -> Void
+}
+
+struct FileRequest {
+    let multiple: Bool
+    /// Nil is Cancel.
+    let answer: ([URL]?) -> Void
+}
+
 /// Links that would open a new window (target="_blank", window.open) open in a new tab instead.
-private struct NewWindowsAsTabs: WebPage.NavigationDeciding {
+/// Links WebKit cannot load, such as mailto: and tel:, open in their own app.
+private struct Links: WebPage.NavigationDeciding {
     let open: (URLRequest) -> Void
 
     func decidePolicy(for action: WebPage.NavigationAction, preferences: inout WebPage.NavigationPreferences) async -> WKNavigationActionPolicy {
+        if let url = action.request.url, let scheme = url.scheme, !WKWebView.handlesURLScheme(scheme) {
+            await UIApplication.shared.open(url)
+            return .cancel
+        }
         guard action.target == nil else { return .allow }
         open(action.request)
         return .cancel
+    }
+}
+
+/// Shows a page's alert, confirm, prompt and file field in the browser.
+private struct Dialogs: WebPage.DialogPresenting {
+    weak var browser: Browser?
+
+    func handleJavaScriptAlert(message: String, initiatedBy frame: WebPage.FrameInfo) async {
+        _ = await browser?.ask(.alert, message)
+    }
+
+    func handleJavaScriptConfirm(message: String, initiatedBy frame: WebPage.FrameInfo) async -> WebPage.JavaScriptConfirmResult {
+        await browser?.ask(.confirm, message) == nil ? .cancel : .ok
+    }
+
+    func handleJavaScriptPrompt(message: String, defaultText: String?, initiatedBy frame: WebPage.FrameInfo) async -> WebPage.JavaScriptPromptResult {
+        guard let text = await browser?.ask(.prompt, message, text: defaultText ?? "") else { return .cancel }
+        return .ok(text)
+    }
+
+    func handleFileInputPrompt(parameters: WKOpenPanelParameters, initiatedBy frame: WebPage.FrameInfo) async -> WebPage.FileInputPromptResult {
+        guard let files = await browser?.askForFiles(multiple: parameters.allowsMultipleSelection) else { return .cancel }
+        return .selected(files)
     }
 }

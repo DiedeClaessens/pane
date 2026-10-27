@@ -18,6 +18,10 @@
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Websites can ask to use the camera, for example for a video call.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Websites can ask to use the microphone, for example for a video call.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

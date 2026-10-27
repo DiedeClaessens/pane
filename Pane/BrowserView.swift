@@ -56,7 +56,33 @@ struct BrowserView: View {
         .onChange(of: scenePhase) {
             if scenePhase != .active { browser.save() }
         }
+        .alert(browser.dialog?.message ?? "", isPresented: .constant(browser.dialog != nil)) {
+            if browser.dialog?.kind == .prompt {
+                TextField("", text: Binding(get: { browser.dialog?.text ?? "" }, set: { browser.dialog?.text = $0 }))
+            }
+            if browser.dialog?.kind != .alert {
+                Button("Cancel", role: .cancel) { browser.closeDialog(ok: false) }
+            }
+            Button("OK") { browser.closeDialog(ok: true) }
+        }
+        .fileImporter(
+            isPresented: .constant(browser.fileRequest != nil),
+            allowedContentTypes: [.item],
+            allowsMultipleSelection: browser.fileRequest?.multiple ?? false,
+            onCompletion: { browser.closeFileRequest(try? $0.get().map(copyToTemporary)) },
+            onCancellation: { browser.closeFileRequest(nil) }
+        )
     }
+}
+
+/// Picked files are only readable while Pane holds access to them, so the page gets a copy.
+private func copyToTemporary(_ file: URL) throws -> URL {
+    let access = file.startAccessingSecurityScopedResource()
+    defer { if access { file.stopAccessingSecurityScopedResource() } }
+    let copy = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString).appending(path: file.lastPathComponent)
+    try FileManager.default.createDirectory(at: copy.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try FileManager.default.copyItem(at: file, to: copy)
+    return copy
 }
 
 /// A quick horizontal swipe anywhere but the left edge, which opens the sidebar.
