@@ -56,14 +56,20 @@ struct BrowserView: View {
         .onChange(of: scenePhase) {
             if scenePhase != .active { browser.save() }
         }
-        .alert(browser.dialog?.message ?? "", isPresented: .constant(browser.dialog != nil)) {
-            if browser.dialog?.kind == .prompt {
-                TextField("", text: Binding(get: { browser.dialog?.text ?? "" }, set: { browser.dialog?.text = $0 }))
-            }
-            if browser.dialog?.kind != .alert {
-                Button("Cancel", role: .cancel) { browser.closeDialog(ok: false) }
-            }
-            Button("OK") { browser.closeDialog(ok: true) }
+        .background {
+            Color.clear
+                .alert(browser.dialog?.site ?? "", isPresented: .constant(browser.dialog != nil)) {
+                    if browser.dialog?.kind == .prompt {
+                        TextField("", text: Binding(get: { browser.dialog?.text ?? "" }, set: { browser.dialog?.text = $0 }))
+                    }
+                    if browser.dialog?.kind != .alert {
+                        Button("Cancel", role: .cancel) { browser.closeDialog(ok: false) }
+                    }
+                    Button("OK") { browser.closeDialog(ok: true) }
+                } message: {
+                    Text(browser.dialog?.message ?? "")
+                }
+                .id(browser.dialog?.id)
         }
         .fileImporter(
             isPresented: .constant(browser.fileRequest != nil),

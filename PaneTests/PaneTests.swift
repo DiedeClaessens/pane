@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import Pane
 
@@ -143,4 +144,31 @@ private func tabsFile() -> URL {
     #expect(browser.dialog?.message == "First")
     browser.closeDialog(ok: true)
     #expect(try await firstAnswer == true)
+}
+
+private func shownAlert(in host: UIViewController, saying message: String) async throws -> UIAlertController {
+    while true {
+        if let alert = host.presentedViewController as? UIAlertController, alert.message == message, !alert.isBeingPresented { return alert }
+        try await Task.sleep(for: .milliseconds(50))
+    }
+}
+
+private func tap(_ title: String, in alert: UIAlertController) {
+    alert.perform(NSSelectorFromString("_dismissWithAction:"), with: alert.actions.first { $0.title == title })
+}
+
+@Test(.timeLimit(.minutes(1))) func anAlertRightAfterAConfirmShows() async throws {
+    let window = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow)
+    let browser = Browser(file: tabsFile())
+    browser.open(URL(string: "about:blank")!)
+    let page = try #require(browser.selected).page
+    for try await _ in page.load(html: "<p>Hello</p>") {}
+    let host = UIHostingController(rootView: BrowserView(browser: browser))
+    let previous = window.rootViewController
+    window.rootViewController = host
+    defer { window.rootViewController = previous }
+    async let done = page.callJavaScript("return confirm('one') && (alert('two'), 'answered')") as? String
+    tap("OK", in: try await shownAlert(in: host, saying: "one"))
+    tap("OK", in: try await shownAlert(in: host, saying: "two"))
+    #expect(try await done == "answered")
 }

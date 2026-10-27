@@ -133,10 +133,10 @@ final class Tab: Identifiable {
     }
 
     /// A dialog that comes while another is open is cancelled, so the alert on screen is always the one being answered.
-    fileprivate func ask(_ kind: Dialog.Kind, _ message: String, text: String = "") async -> String? {
+    fileprivate func ask(_ kind: Dialog.Kind, _ message: String, from frame: WebPage.FrameInfo, text: String = "") async -> String? {
         guard dialog == nil else { return nil }
         return await withCheckedContinuation { answer in
-            dialog = Dialog(kind: kind, message: message, text: text) { answer.resume(returning: $0) }
+            dialog = Dialog(kind: kind, site: frame.securityOrigin.host, message: message, text: text) { answer.resume(returning: $0) }
         }
     }
 
@@ -219,7 +219,11 @@ enum SearchEngine: String, CaseIterable, Identifiable {
 struct Dialog {
     enum Kind { case alert, confirm, prompt }
 
+    /// A new identity makes SwiftUI show a new alert, even when the last one is still closing.
+    let id = UUID()
     let kind: Kind
+    /// The host of the page or frame that asks, so a frame cannot pose as the page.
+    let site: String
     let message: String
     var text: String
     /// Nil is Cancel.
@@ -253,15 +257,15 @@ private struct Dialogs: WebPage.DialogPresenting {
     weak var browser: Browser?
 
     func handleJavaScriptAlert(message: String, initiatedBy frame: WebPage.FrameInfo) async {
-        _ = await browser?.ask(.alert, message)
+        _ = await browser?.ask(.alert, message, from: frame)
     }
 
     func handleJavaScriptConfirm(message: String, initiatedBy frame: WebPage.FrameInfo) async -> WebPage.JavaScriptConfirmResult {
-        await browser?.ask(.confirm, message) == nil ? .cancel : .ok
+        await browser?.ask(.confirm, message, from: frame) == nil ? .cancel : .ok
     }
 
     func handleJavaScriptPrompt(message: String, defaultText: String?, initiatedBy frame: WebPage.FrameInfo) async -> WebPage.JavaScriptPromptResult {
-        guard let text = await browser?.ask(.prompt, message, text: defaultText ?? "") else { return .cancel }
+        guard let text = await browser?.ask(.prompt, message, from: frame, text: defaultText ?? "") else { return .cancel }
         return .ok(text)
     }
 
