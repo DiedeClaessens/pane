@@ -12,6 +12,7 @@ private func tabsFile() -> URL {
 
 @Test func anAddressWithSchemeOpensAsTyped() {
     #expect(Browser.destination(for: "http://localhost:4000/a", searchingWith: .google) == URL(string: "http://localhost:4000/a"))
+    #expect(Browser.destination(for: "HTTP://localhost:4000/a", searchingWith: .google) == URL(string: "HTTP://localhost:4000/a"))
 }
 
 @Test func wordsSearchGoogle() {
@@ -34,8 +35,8 @@ private func tabsFile() -> URL {
     browser.open(URL(string: "https://c.com")!)
     browser.select(browser.tabs[0])
     browser.open(URL(string: "https://b.com")!)
-    #expect(browser.tabs.map { $0.url?.host() } == ["a.com", "b.com", "c.com"])
-    #expect(browser.selected?.url?.host() == "b.com")
+    #expect(browser.tabs.map { $0.url.host() } == ["a.com", "b.com", "c.com"])
+    #expect(browser.selected?.url.host() == "b.com")
 }
 
 @Test func closingTheSelectedTabSelectsTheNextOne() {
@@ -45,16 +46,16 @@ private func tabsFile() -> URL {
     browser.open(URL(string: "https://c.com")!)
     browser.select(browser.tabs[1])
     browser.close(browser.tabs[1])
-    #expect(browser.selected?.url?.host() == "c.com")
+    #expect(browser.selected?.url.host() == "c.com")
     browser.close(browser.tabs[1])
-    #expect(browser.selected?.url?.host() == "a.com")
+    #expect(browser.selected?.url.host() == "a.com")
 }
 
 @Test func aPaneLinkOpensItsAddressInANewTab() {
     let browser = Browser(file: tabsFile())
     browser.open(URL(string: "https://a.com")!)
     browser.open(paneLink: URL(string: "pane:https://b.com/x?y=1")!)
-    #expect(browser.tabs.map { $0.url?.host() } == ["a.com", "b.com"])
+    #expect(browser.tabs.map { $0.url.host() } == ["a.com", "b.com"])
     #expect(browser.selected?.url == URL(string: "https://b.com/x?y=1"))
 }
 
@@ -63,9 +64,9 @@ private func tabsFile() -> URL {
     browser.open(URL(string: "https://a.com")!)
     browser.open(URL(string: "https://b.com")!)
     browser.select(offset: 1)
-    #expect(browser.selected?.url?.host() == "a.com")
+    #expect(browser.selected?.url.host() == "a.com")
     browser.select(offset: -1)
-    #expect(browser.selected?.url?.host() == "b.com")
+    #expect(browser.selected?.url.host() == "b.com")
 }
 
 @Test func tabsComeBackAfterARestart() {
@@ -77,14 +78,16 @@ private func tabsFile() -> URL {
     browser.save()
 
     let restarted = Browser(file: file)
-    #expect(restarted.tabs.map(\.url) == [URL(string: "https://a.com/x"), URL(string: "https://b.com/y")])
+    #expect(restarted.tabs.map(\.url.absoluteString) == ["https://a.com/x", "https://b.com/y"])
     #expect(restarted.selected?.url == URL(string: "https://a.com/x"))
+    #expect(restarted.tabs[1].page.url == nil)
 }
 
 @Test func darkPagesTurnAWhitePageDark() async throws {
     let browser = Browser(file: tabsFile())
+    let darkPages = browser.darkPages
     browser.darkPages = true
-    defer { browser.darkPages = false }
+    defer { browser.darkPages = darkPages }
     browser.open(URL(string: "about:blank")!)
     let page = try #require(browser.selected).page
     for try await _ in page.load(html: "<p>Hello</p>") {}

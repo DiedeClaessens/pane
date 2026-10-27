@@ -46,6 +46,7 @@ struct BrowserView: View {
         .overlay {
             if let mode = browser.commandBar ?? (browser.tabs.isEmpty ? .newTab : nil) {
                 CommandBarView(browser: browser, mode: mode)
+                    .id(mode)
             }
         }
         .animation(.snappy(duration: 0.25), value: browser.showsSidebar)
@@ -104,7 +105,7 @@ private struct Sidebar: View {
             .padding(.horizontal, 8)
 
             Button { browser.showCommandBar(.currentTab) } label: {
-                Text(browser.selected?.url?.host() ?? "Search or enter address")
+                Text(browser.selected?.url.host() ?? "Search or enter address")
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(10)
@@ -137,7 +138,6 @@ private struct Sidebar: View {
         .glassEffect(in: .rect(cornerRadius: 24))
         .padding(8)
         .tint(.primary)
-        .onHover { if !$0 { browser.showsSidebar = false } }
     }
 }
 
@@ -147,7 +147,7 @@ private struct TabRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            AsyncImage(url: tab.url?.host().flatMap { URL(string: "https://\($0)/favicon.ico") }) { image in
+            AsyncImage(url: tab.url.host().flatMap { URL(string: "https://\($0)/favicon.ico") }) { image in
                 image.resizable()
             } placeholder: {
                 Image(systemName: "globe").foregroundStyle(.secondary)
@@ -181,7 +181,7 @@ private struct CommandBarView: View {
     init(browser: Browser, mode: Browser.CommandBar) {
         self.browser = browser
         self.mode = mode
-        let text = mode == .currentTab ? browser.selected?.url?.absoluteString ?? "" : ""
+        let text = mode == .currentTab ? browser.selected?.url.absoluteString ?? "" : ""
         _text = State(initialValue: text)
         _selection = State(initialValue: TextSelection(range: text.startIndex..<text.endIndex))
     }

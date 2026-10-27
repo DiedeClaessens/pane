@@ -19,7 +19,7 @@ Pane is a personal iPad browser in the style of Zen's compact mode: the page fil
 - Swipe in from the left edge, or move the pointer to the left edge, to show it. Cmd+S toggles it.
 - It holds back, forward and reload, the current host (tap it to edit the address), the tabs in a vertical list with favicons, and "New Tab".
 - Tap a tab to switch to it. The cross closes it.
-- The sidebar hides when you tap the page, pick a tab, or move the pointer out of it.
+- The sidebar hides when you tap the page or pick a tab.
 - While the sidebar is open, a swipe left closes it.
 
 ## Back and forward
@@ -30,14 +30,14 @@ Pane is a personal iPad browser in the style of Zen's compact mode: the page fil
 
 ## Dark pages
 
-- The moon button at the top of the sidebar turns every page dark with Dark Reader's dynamic theme, the same engine as the Dark Reader extension. It applies to open pages straight away and to every page that loads after. The sidebar and command bar turn dark with it. The setting is kept across launches.
+- The moon button at the top of the sidebar turns every page dark with Dark Reader's dynamic theme, the same engine as the Dark Reader extension. Turning it on or off reloads the open pages, so every frame on them changes, and it applies to every page that loads after. The sidebar and command bar turn dark with it. The setting is kept across launches.
 - `Pane/darkreader.js` is version 4.9.133 of the `darkreader` npm package (MIT, license in `docs/darkreader-LICENSE`). Pane injects it into every frame at document start, in its own script world so pages cannot see it.
 - There are no per-site exceptions or brightness and contrast settings yet.
 
 ## Command bar
 
 - A floating field near the top. Cmd+T opens it for a new tab. Cmd+L, or tapping the host in the sidebar, opens it for the current tab with the address selected.
-- Text that starts with `http://` or `https://` opens as typed. Text with a dot and no spaces opens over HTTPS. Anything else is a search with the engine picked at the bottom of the sidebar: Google (the default), DuckDuckGo, Kagi, Brave Search, Startpage, Ecosia or Bing. The field's placeholder names the engine.
+- Text that starts with `http://` or `https://`, in any case, opens as typed. Text with a dot and no spaces opens over HTTPS. Anything else is a search with the engine picked at the bottom of the sidebar: Google (the default), DuckDuckGo, Kagi, Brave Search, Startpage, Ecosia or Bing. The field's placeholder names the engine.
 - Escape or a tap outside closes it.
 
 ## Tabs

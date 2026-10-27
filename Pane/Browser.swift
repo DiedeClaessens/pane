@@ -2,23 +2,23 @@ import Foundation
 import Observation
 import WebKit
 
-@Observable final class Tab: Identifiable {
+final class Tab: Identifiable {
     let id = UUID()
     let page: WebPage
-    private let savedURL: URL?
+    private let savedURL: URL
     private let savedTitle: String
 
-    init(page: WebPage, url: URL?, title: String = "") {
+    init(page: WebPage, url: URL, title: String = "") {
         self.page = page
         savedURL = url
         savedTitle = title
     }
 
-    var url: URL? { page.url ?? savedURL }
+    var url: URL { page.url ?? savedURL }
     var title: String {
         if !page.title.isEmpty { return page.title }
         if !savedTitle.isEmpty { return savedTitle }
-        return url?.host() ?? "New Tab"
+        return url.host() ?? "New Tab"
     }
 
     /// Restored tabs only start loading once they are shown.
@@ -37,14 +37,12 @@ import WebKit
     var searchEngine = SearchEngine(rawValue: UserDefaults.standard.string(forKey: "searchEngine") ?? "") ?? .google {
         didSet { UserDefaults.standard.set(searchEngine.rawValue, forKey: "searchEngine") }
     }
-    /// Turns every page dark with Dark Reader, also the pages that are already open.
+    /// Turns every page dark with Dark Reader. Open pages reload so every frame picks up the change.
     var darkPages = UserDefaults.standard.bool(forKey: "darkPages") {
         didSet {
             UserDefaults.standard.set(darkPages, forKey: "darkPages")
             installScripts()
-            for tab in tabs where tab.page.url != nil {
-                Task { try? await tab.page.callJavaScript(darkPages ? Self.darkReader : "DarkReader.disable()", contentWorld: .defaultClient) }
-            }
+            for tab in tabs where tab.page.url != nil { tab.page.reload() }
         }
     }
     private let file: URL
@@ -110,23 +108,23 @@ import WebKit
     }
 
     func save() {
-        let saved = Saved(tabs: tabs.compactMap { tab in tab.url.map { Saved.Tab(url: $0, title: tab.title) } }, selected: tabs.firstIndex { $0.id == selectedID })
+        let saved = Saved(tabs: tabs.map { Saved.Tab(url: $0.url, title: $0.title) }, selected: tabs.firstIndex { $0.id == selectedID })
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try? JSONEncoder().encode(saved).write(to: file)
+        try? JSONEncoder().encode(saved).write(to: file, options: .atomic)
     }
 
     /// A web address when the input looks like one, otherwise a search.
     static func destination(for input: String, searchingWith engine: SearchEngine) -> URL? {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
-        if text.hasPrefix("http://") || text.hasPrefix("https://"), let url = URL(string: text) { return url }
+        if let url = URL(string: text), ["http", "https"].contains(url.scheme?.lowercased()) { return url }
         if !text.contains(" "), text.contains("."), let url = URL(string: "https://" + text) { return url }
         var search = URLComponents(string: engine.address)!
         search.queryItems = [URLQueryItem(name: engine.queryName, value: text)]
         return search.url
     }
 
-    private func makeTab(url: URL?, title: String = "") -> Tab {
+    private func makeTab(url: URL, title: String = "") -> Tab {
         var configuration = WebPage.Configuration()
         configuration.userContentController = scripts
         return Tab(page: WebPage(configuration: configuration, navigationDecider: NewWindowsAsTabs { [weak self] in self?.open($0) }), url: url, title: title)
@@ -138,12 +136,11 @@ import WebKit
         scripts.addUserScript(WKUserScript(source: Self.darkReader, injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient))
     }
 
-    /// Loads Dark Reader (darkreader.js, MIT, from the darkreader npm package) once per page and turns it on.
+    /// Dark Reader (darkreader.js, MIT, from the darkreader npm package), turned on.
+    /// Its fetch loads stylesheets from other hosts. A bare `fetch` would lose `this` and fail.
     private static let darkReader = """
-        if (!self.DarkReader) {
         \(try! String(contentsOf: Bundle.main.url(forResource: "darkreader", withExtension: "js")!, encoding: .utf8))
-        }
-        DarkReader.setFetchMethod(self.fetch);
+        DarkReader.setFetchMethod(url => fetch(url));
         DarkReader.enable({});
         """
 
