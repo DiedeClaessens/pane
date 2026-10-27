@@ -7,20 +7,25 @@ private func tabsFile() -> URL {
 }
 
 @Test func anAddressWithoutSchemeOpensOverHTTPS() {
-    #expect(Browser.destination(for: " example.com/docs ") == URL(string: "https://example.com/docs"))
+    #expect(Browser.destination(for: " example.com/docs ", searchingWith: .google) == URL(string: "https://example.com/docs"))
 }
 
 @Test func anAddressWithSchemeOpensAsTyped() {
-    #expect(Browser.destination(for: "http://localhost:4000/a") == URL(string: "http://localhost:4000/a"))
+    #expect(Browser.destination(for: "http://localhost:4000/a", searchingWith: .google) == URL(string: "http://localhost:4000/a"))
 }
 
 @Test func wordsSearchGoogle() {
-    #expect(Browser.destination(for: "swift.org release notes") == URL(string: "https://www.google.com/search?q=swift.org%20release%20notes"))
-    #expect(Browser.destination(for: "weather") == URL(string: "https://www.google.com/search?q=weather"))
+    #expect(Browser.destination(for: "swift.org release notes", searchingWith: .google) == URL(string: "https://www.google.com/search?q=swift.org%20release%20notes"))
+    #expect(Browser.destination(for: "weather", searchingWith: .google) == URL(string: "https://www.google.com/search?q=weather"))
+}
+
+@Test func wordsSearchThePickedEngine() {
+    #expect(Browser.destination(for: "weather", searchingWith: .duckDuckGo) == URL(string: "https://duckduckgo.com/?q=weather"))
+    #expect(Browser.destination(for: "weather", searchingWith: .startpage) == URL(string: "https://www.startpage.com/sp/search?query=weather"))
 }
 
 @Test func blankInputGoesNowhere() {
-    #expect(Browser.destination(for: "   ") == nil)
+    #expect(Browser.destination(for: "   ", searchingWith: .google) == nil)
 }
 
 @Test func linksOpenNextToTheCurrentTab() {
@@ -66,4 +71,15 @@ private func tabsFile() -> URL {
     let restarted = Browser(file: file)
     #expect(restarted.tabs.map(\.url) == [URL(string: "https://a.com/x"), URL(string: "https://b.com/y")])
     #expect(restarted.selected?.url == URL(string: "https://a.com/x"))
+}
+
+@Test func darkPagesTurnAWhitePageDark() async throws {
+    let browser = Browser(file: tabsFile())
+    browser.darkPages = true
+    defer { browser.darkPages = false }
+    browser.open(URL(string: "about:blank")!)
+    let page = try #require(browser.selected).page
+    for try await _ in page.load(html: "<p>Hello</p>") {}
+    let background = try await page.callJavaScript("return getComputedStyle(document.documentElement).backgroundColor") as? String
+    #expect(background == "rgb(24, 26, 27)")
 }

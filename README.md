@@ -2,7 +2,7 @@
 
 # Pane
 
-A personal iPad browser with nothing on screen but the page, like Zen's compact mode. Swipe in from the left edge for the tabs. See [docs/design.md](docs/design.md) for what it does.
+A personal iPad browser with nothing on screen but the page, like Zen's compact mode. Swipe in from the left edge for the tabs, and swipe right or left anywhere to go back or forward. See [docs/design.md](docs/design.md) for what it does.
 
 ## Run it on your iPad
 

@@ -20,12 +20,24 @@ Pane is a personal iPad browser in the style of Zen's compact mode: the page fil
 - It holds back, forward and reload, the current host (tap it to edit the address), the tabs in a vertical list with favicons, and "New Tab".
 - Tap a tab to switch to it. The cross closes it.
 - The sidebar hides when you tap the page, pick a tab, or move the pointer out of it.
-- The left edge opens the sidebar, so the swipe-back gesture is off. Go back with the sidebar button or Cmd+[.
+- While the sidebar is open, a swipe left closes it.
+
+## Back and forward
+
+- A quick swipe right anywhere on the page goes back. A swipe left goes forward. Swipes that start at the left edge open the sidebar instead.
+- The swipe runs alongside the page's own scrolling, so a quick horizontal swipe on a carousel or a map also goes back or forward.
+- The sidebar buttons, Cmd+[ and Cmd+] also go back and forward.
+
+## Dark pages
+
+- The moon button at the top of the sidebar turns every page dark with Dark Reader's dynamic theme, the same engine as the Dark Reader extension. It applies to open pages straight away and to every page that loads after. The sidebar and command bar turn dark with it. The setting is kept across launches.
+- `Pane/darkreader.js` is version 4.9.133 of the `darkreader` npm package (MIT, license in `docs/darkreader-LICENSE`). Pane injects it into every frame at document start, in its own script world so pages cannot see it.
+- There are no per-site exceptions or brightness and contrast settings yet.
 
 ## Command bar
 
 - A floating field near the top. Cmd+T opens it for a new tab. Cmd+L, or tapping the host in the sidebar, opens it for the current tab with the address selected.
-- Text that starts with `http://` or `https://` opens as typed. Text with a dot and no spaces opens over HTTPS. Anything else is a Google search.
+- Text that starts with `http://` or `https://` opens as typed. Text with a dot and no spaces opens over HTTPS. Anything else is a search with the engine picked at the bottom of the sidebar: Google (the default), DuckDuckGo, Kagi, Brave Search, Startpage, Ecosia or Bing. The field's placeholder names the engine.
 - Escape or a tap outside closes it.
 
 ## Tabs
@@ -41,4 +53,4 @@ Cmd+T new tab, Cmd+L open location, Cmd+W close tab, Cmd+S sidebar, Cmd+[ back, 
 
 ## Out of scope for now
 
-- Workspaces, pinned tabs ("Essentials"), split view, bookmarks, history, downloads, content blocking, a choice of search engine, "Open in New Tab" in the long-press menu, and being the default browser (Apple only grants that entitlement to published browsers).
+- Workspaces, pinned tabs ("Essentials"), split view, bookmarks, history, downloads, content blocking, "Open in New Tab" in the long-press menu, and being the default browser (Apple only grants that entitlement to published browsers).

@@ -2,6 +2,7 @@ import SwiftUI
 import WebKit
 
 /// The page fills the screen. Swipe in from the left edge, or move the pointer there, to show the sidebar.
+/// Swipe right or left anywhere else to go back or forward.
 struct BrowserView: View {
     let browser: Browser
     @Environment(\.scenePhase) private var scenePhase
@@ -36,16 +37,51 @@ struct BrowserView: View {
             }
         }
         .ignoresSafeArea()
+        .gesture(Swipe(direction: .right) {
+            if !browser.showsSidebar { browser.goBack() }
+        })
+        .gesture(Swipe(direction: .left) {
+            if browser.showsSidebar { browser.showsSidebar = false } else { browser.goForward() }
+        })
         .overlay {
             if let mode = browser.commandBar ?? (browser.tabs.isEmpty ? .newTab : nil) {
                 CommandBarView(browser: browser, mode: mode)
             }
         }
         .animation(.snappy(duration: 0.25), value: browser.showsSidebar)
+        .preferredColorScheme(browser.darkPages ? .dark : nil)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
         .onChange(of: scenePhase) {
             if scenePhase != .active { browser.save() }
+        }
+    }
+}
+
+/// A quick horizontal swipe anywhere but the left edge, which opens the sidebar.
+/// It runs alongside the page's own scrolling and taps instead of blocking them.
+private struct Swipe: UIGestureRecognizerRepresentable {
+    let direction: UISwipeGestureRecognizer.Direction
+    let action: () -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UISwipeGestureRecognizer {
+        let swipe = UISwipeGestureRecognizer()
+        swipe.direction = direction
+        swipe.delegate = context.coordinator
+        return swipe
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UISwipeGestureRecognizer, context: Context) {
+        if recognizer.state == .ended { action() }
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            touch.location(in: gestureRecognizer.view).x > 24
         }
     }
 }
@@ -59,6 +95,9 @@ private struct Sidebar: View {
                 Button("Back", systemImage: "chevron.left") { browser.goBack() }
                 Button("Forward", systemImage: "chevron.right") { browser.goForward() }
                 Button("Reload", systemImage: "arrow.clockwise") { browser.selected?.page.reload() }
+                Spacer()
+                Toggle("Dark Pages", systemImage: "moon", isOn: Bindable(browser).darkPages)
+                    .toggleStyle(.button)
             }
             .labelStyle(.iconOnly)
             .font(.title3)
@@ -81,8 +120,16 @@ private struct Sidebar: View {
                 }
             }
 
-            Button("New Tab", systemImage: "plus") { browser.showCommandBar(.newTab) }
-                .padding(.horizontal, 8)
+            HStack {
+                Button("New Tab", systemImage: "plus") { browser.showCommandBar(.newTab) }
+                Spacer()
+                Picker("Search with", systemImage: "magnifyingglass", selection: Bindable(browser).searchEngine) {
+                    ForEach(SearchEngine.allCases) { Text($0.rawValue) }
+                }
+                .pickerStyle(.menu)
+                .fixedSize()
+            }
+            .padding(.horizontal, 8)
         }
         .padding(12)
         .frame(width: 300)
@@ -144,7 +191,7 @@ private struct CommandBarView: View {
             Color.black.opacity(0.15)
                 .ignoresSafeArea()
                 .onTapGesture { browser.commandBar = nil }
-            TextField("Search or enter address", text: $text, selection: $selection)
+            TextField("Search \(browser.searchEngine.rawValue) or enter address", text: $text, selection: $selection)
                 .font(.title3)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
