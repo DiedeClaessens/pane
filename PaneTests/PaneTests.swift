@@ -194,3 +194,21 @@ private func tap(_ title: String, in alert: UIAlertController) {
     #expect(try await page.callJavaScript("return confirm('Leave?')") as? Bool == false)
     #expect(browser.dialog == nil)
 }
+
+@Test func darkPagesLeaveThePageOwnColorSchemeAlone() async throws {
+    let window = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow)
+    let browser = Browser(file: tabsFile())
+    let darkPages = browser.darkPages
+    browser.darkPages = true
+    defer { browser.darkPages = darkPages }
+    browser.open(URL(string: "about:blank")!)
+    let page = try #require(browser.selected).page
+    let host = UIHostingController(rootView: BrowserView(browser: browser))
+    host.overrideUserInterfaceStyle = .light
+    let previous = window.rootViewController
+    window.rootViewController = host
+    defer { window.rootViewController = previous }
+    for try await _ in page.load(html: "<p>Hello</p>") {}
+    try await Task.sleep(for: .milliseconds(500))
+    #expect(try await page.callJavaScript("return matchMedia('(prefers-color-scheme: dark)').matches") as? Bool == false)
+}

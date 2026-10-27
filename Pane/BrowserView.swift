@@ -6,6 +6,10 @@ import WebKit
 struct BrowserView: View {
     let browser: Browser
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// Dark pages darken the sidebar and command bar, but not the page's own color scheme, which Dark Reader handles.
+    private var chromeScheme: ColorScheme { browser.darkPages ? .dark : colorScheme }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -33,6 +37,7 @@ struct BrowserView: View {
                     .contentShape(.rect)
                     .onTapGesture { browser.showsSidebar = false }
                 Sidebar(browser: browser)
+                    .environment(\.colorScheme, chromeScheme)
                     .transition(.move(edge: .leading).combined(with: .opacity))
             }
         }
@@ -46,11 +51,11 @@ struct BrowserView: View {
         .overlay {
             if let mode = browser.commandBar ?? (browser.tabs.isEmpty ? .newTab : nil) {
                 CommandBarView(browser: browser, mode: mode)
+                    .environment(\.colorScheme, chromeScheme)
                     .id(mode)
             }
         }
         .animation(.snappy(duration: 0.25), value: browser.showsSidebar)
-        .preferredColorScheme(browser.darkPages ? .dark : nil)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
         .onChange(of: scenePhase) {

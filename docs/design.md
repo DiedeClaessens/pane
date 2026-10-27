@@ -30,7 +30,7 @@ Pane is a personal iPad browser in the style of Zen's compact mode: the page fil
 
 ## Dark pages
 
-- The moon button at the top of the sidebar turns every page dark with Dark Reader's dynamic theme, the same engine as the Dark Reader extension. Turning it on or off reloads the open pages, so every frame on them changes, and it applies to every page that loads after. The sidebar and command bar turn dark with it. The setting is kept across launches.
+- The moon button at the top of the sidebar turns every page dark with Dark Reader's dynamic theme, the same engine as the Dark Reader extension. Turning it on or off reloads the open pages, so every frame on them changes, and it applies to every page that loads after. The sidebar and command bar turn dark with it. Pages keep the system's color scheme, so a site does not switch to its own dark theme and then get darkened again by Dark Reader. The setting is kept across launches.
 - `Pane/darkreader.js` is version 4.9.133 of the `darkreader` npm package (MIT, license in `docs/darkreader-LICENSE`). Pane injects it into every frame at document start, in its own script world so pages cannot see it.
 - There are no per-site exceptions or brightness and contrast settings yet.
 
