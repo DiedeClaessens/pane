@@ -19,6 +19,7 @@ private func tabsFile() -> URL {
 @Test func wordsSearchGoogle() {
     #expect(Browser.destination(for: "swift.org release notes", searchingWith: .google) == URL(string: "https://www.google.com/search?q=swift.org%20release%20notes"))
     #expect(Browser.destination(for: "weather", searchingWith: .google) == URL(string: "https://www.google.com/search?q=weather"))
+    #expect(Browser.destination(for: "C++ tutorial", searchingWith: .google) == URL(string: "https://www.google.com/search?q=C%2B%2B%20tutorial"))
 }
 
 @Test func wordsSearchThePickedEngine() {

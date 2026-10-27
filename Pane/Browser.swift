@@ -161,6 +161,8 @@ final class Tab: Identifiable {
         if !text.contains(" "), text.contains("."), let url = URL(string: "https://" + text) { return url }
         var search = URLComponents(string: engine.address)!
         search.queryItems = [URLQueryItem(name: engine.queryName, value: text)]
+        // Search engines read + as a space, and URLQueryItem leaves it as is.
+        search.percentEncodedQuery = search.percentEncodedQuery?.replacing("+", with: "%2B")
         return search.url
     }
 
