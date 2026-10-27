@@ -132,16 +132,16 @@ final class Tab: Identifiable {
         request?.answer(files)
     }
 
-    /// A dialog that comes while another is open is cancelled, so the alert on screen is always the one being answered.
+    /// A dialog that comes while another dialog or the file picker is open is cancelled, so the alert on screen is always the one being answered.
     fileprivate func ask(_ kind: Dialog.Kind, _ message: String, from frame: WebPage.FrameInfo, text: String = "") async -> String? {
-        guard dialog == nil else { return nil }
+        guard dialog == nil, fileRequest == nil else { return nil }
         return await withCheckedContinuation { answer in
             dialog = Dialog(kind: kind, site: frame.securityOrigin.host, message: message, text: text) { answer.resume(returning: $0) }
         }
     }
 
     fileprivate func askForFiles(multiple: Bool) async -> [URL]? {
-        guard fileRequest == nil else { return nil }
+        guard fileRequest == nil, dialog == nil else { return nil }
         return await withCheckedContinuation { answer in
             fileRequest = FileRequest(multiple: multiple) { answer.resume(returning: $0) }
         }

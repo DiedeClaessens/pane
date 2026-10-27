@@ -110,9 +110,10 @@ private func tabsFile() -> URL {
     let browser = Browser(file: tabsFile())
     browser.open(URL(string: "about:blank")!)
     let page = try #require(browser.selected).page
-    for try await _ in page.load(html: "<p>Hello</p>") {}
+    for try await _ in page.load(html: "<p>Hello</p>", baseURL: URL(string: "https://example.com/")!) {}
     async let answer = page.callJavaScript("return confirm('Leave?')") as? Bool
     while browser.dialog == nil { try await Task.sleep(for: .milliseconds(10)) }
+    #expect(browser.dialog?.site == "example.com")
     #expect(browser.dialog?.message == "Leave?")
     browser.closeDialog(ok: true)
     #expect(try await answer == true)
@@ -168,6 +169,7 @@ private func tap(_ title: String, in alert: UIAlertController) {
     window.rootViewController = host
     defer { window.rootViewController = previous }
     async let done = page.callJavaScript("return confirm('one') && (alert('two'), 'answered')") as? String
+    defer { browser.closeDialog(ok: false) }
     tap("OK", in: try await shownAlert(in: host, saying: "one"))
     tap("OK", in: try await shownAlert(in: host, saying: "two"))
     #expect(try await done == "answered")
@@ -181,4 +183,14 @@ private func tap(_ title: String, in alert: UIAlertController) {
     _ = try await page.callJavaScript("window.open('https://b.com/x')")
     while browser.tabs.count < 2 { try await Task.sleep(for: .milliseconds(10)) }
     #expect(browser.selected?.url == URL(string: "https://b.com/x"))
+}
+
+@Test(.timeLimit(.minutes(1))) func aDialogWhileTheFilePickerIsOpenIsCancelled() async throws {
+    let browser = Browser(file: tabsFile())
+    browser.open(URL(string: "about:blank")!)
+    let page = try #require(browser.selected).page
+    for try await _ in page.load(html: "<p>Hello</p>") {}
+    browser.fileRequest = FileRequest(multiple: false) { _ in }
+    #expect(try await page.callJavaScript("return confirm('Leave?')") as? Bool == false)
+    #expect(browser.dialog == nil)
 }
