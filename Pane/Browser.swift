@@ -132,15 +132,16 @@ final class Tab: Identifiable {
         request?.answer(files)
     }
 
+    /// A dialog that comes while another is open is cancelled, so the alert on screen is always the one being answered.
     fileprivate func ask(_ kind: Dialog.Kind, _ message: String, text: String = "") async -> String? {
-        closeDialog(ok: false)
+        guard dialog == nil else { return nil }
         return await withCheckedContinuation { answer in
             dialog = Dialog(kind: kind, message: message, text: text) { answer.resume(returning: $0) }
         }
     }
 
     fileprivate func askForFiles(multiple: Bool) async -> [URL]? {
-        closeFileRequest(nil)
+        guard fileRequest == nil else { return nil }
         return await withCheckedContinuation { answer in
             fileRequest = FileRequest(multiple: multiple) { answer.resume(returning: $0) }
         }
@@ -232,13 +233,13 @@ struct FileRequest {
 }
 
 /// Links that would open a new window (target="_blank", window.open) open in a new tab instead.
-/// Links WebKit cannot load, such as mailto: and tel:, open in their own app.
+/// Links WebKit cannot load, such as mailto: and tel:, open in their own app when the page itself or a tap asks for it, not an ad in a frame.
 private struct Links: WebPage.NavigationDeciding {
     let open: (URLRequest) -> Void
 
     func decidePolicy(for action: WebPage.NavigationAction, preferences: inout WebPage.NavigationPreferences) async -> WKNavigationActionPolicy {
         if let url = action.request.url, let scheme = url.scheme, !WKWebView.handlesURLScheme(scheme) {
-            await UIApplication.shared.open(url)
+            if action.target?.isMainFrame != false || action.navigationType == .linkActivated { await UIApplication.shared.open(url) }
             return .cancel
         }
         guard action.target == nil else { return .allow }

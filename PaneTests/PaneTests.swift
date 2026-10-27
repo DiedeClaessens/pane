@@ -105,7 +105,7 @@ private func tabsFile() -> URL {
     #expect(browser.selected?.url.host() == "a.com")
 }
 
-@Test func aPageCanAskToConfirm() async throws {
+@Test(.timeLimit(.minutes(1))) func aPageCanAskToConfirm() async throws {
     let browser = Browser(file: tabsFile())
     browser.open(URL(string: "about:blank")!)
     let page = try #require(browser.selected).page
@@ -117,7 +117,7 @@ private func tabsFile() -> URL {
     #expect(try await answer == true)
 }
 
-@Test func aPagePromptGetsTheTypedText() async throws {
+@Test(.timeLimit(.minutes(1))) func aPagePromptGetsTheTypedText() async throws {
     let browser = Browser(file: tabsFile())
     browser.open(URL(string: "about:blank")!)
     let page = try #require(browser.selected).page
@@ -128,4 +128,19 @@ private func tabsFile() -> URL {
     browser.dialog?.text = "Bo"
     browser.closeDialog(ok: true)
     #expect(try await answer == "Bo")
+}
+
+@Test(.timeLimit(.minutes(1))) func aSecondDialogIsCancelledWhileTheFirstIsOpen() async throws {
+    let browser = Browser(file: tabsFile())
+    browser.open(URL(string: "about:blank")!)
+    browser.open(URL(string: "about:blank")!)
+    let first = browser.tabs[0].page, second = browser.tabs[1].page
+    for try await _ in first.load(html: "<p>A</p>") {}
+    for try await _ in second.load(html: "<p>B</p>") {}
+    async let firstAnswer = first.callJavaScript("return confirm('First')") as? Bool
+    while browser.dialog == nil { try await Task.sleep(for: .milliseconds(10)) }
+    #expect(try await second.callJavaScript("return confirm('Second')") as? Bool == false)
+    #expect(browser.dialog?.message == "First")
+    browser.closeDialog(ok: true)
+    #expect(try await firstAnswer == true)
 }
