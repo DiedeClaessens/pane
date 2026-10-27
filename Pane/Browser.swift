@@ -233,13 +233,13 @@ struct FileRequest {
 }
 
 /// Links that would open a new window (target="_blank", window.open) open in a new tab instead.
-/// Links WebKit cannot load, such as mailto: and tel:, open in their own app when the page itself or a tap asks for it, not an ad in a frame.
+/// Links WebKit cannot load, such as mailto: and tel:, open in their own app when the page itself asks for it, not a frame inside it such as an ad.
 private struct Links: WebPage.NavigationDeciding {
     let open: (URLRequest) -> Void
 
     func decidePolicy(for action: WebPage.NavigationAction, preferences: inout WebPage.NavigationPreferences) async -> WKNavigationActionPolicy {
         if let url = action.request.url, let scheme = url.scheme, !WKWebView.handlesURLScheme(scheme) {
-            if action.target?.isMainFrame != false || action.navigationType == .linkActivated { await UIApplication.shared.open(url) }
+            if action.source.isMainFrame { await UIApplication.shared.open(url) }
             return .cancel
         }
         guard action.target == nil else { return .allow }

@@ -51,7 +51,7 @@ Pane is a personal iPad browser in the style of Zen's compact mode: the page fil
 
 - A page's `alert`, `confirm` and `prompt` show as a system alert. A dialog that comes while another is open is cancelled, so the alert on screen is always the one being answered.
 - A file field opens the Files picker. Pane copies the picked files to its temporary folder and gives the page the copies. There is no separate photo library or camera option.
-- Links that WebKit cannot load, such as `mailto:` and `tel:`, open in their own app when the page itself or a tap asks for it. A frame inside the page, such as an ad, cannot switch apps on its own.
+- Links that WebKit cannot load, such as `mailto:` and `tel:`, open in their own app when the page itself asks for it. A frame inside the page, such as an ad, cannot switch apps, even through a link tapped inside it.
 - A page that asks for the camera or microphone gets the system permission prompt.
 
 ## Opening links from other apps
