@@ -58,15 +58,22 @@ final class Tab: Identifiable {
         if let index = saved.selected, tabs.indices.contains(index) { select(tabs[index]) }
     }
 
-    func open(_ url: URL) {
+    func open(_ url: URL) { open(URLRequest(url: url)) }
+
+    /// Opens the request in a new tab after the current one. A form posted to a new window keeps its method and body.
+    func open(_ request: URLRequest) {
+        guard let url = request.url else { return }
         let tab = makeTab(url: url)
         let index = tabs.firstIndex { $0.id == selectedID }.map { $0 + 1 } ?? tabs.endIndex
         tabs.insert(tab, at: index)
+        tab.page.load(request)
         select(tab)
     }
 
+    /// Closes the command bar, which holds the address of the tab it was opened on.
     func select(_ tab: Tab) {
         selectedID = tab.id
+        commandBar = nil
         tab.wake()
     }
 
@@ -177,11 +184,11 @@ enum SearchEngine: String, CaseIterable, Identifiable {
 
 /// Links that would open a new window (target="_blank", window.open) open in a new tab instead.
 private struct NewWindowsAsTabs: WebPage.NavigationDeciding {
-    let open: (URL) -> Void
+    let open: (URLRequest) -> Void
 
     func decidePolicy(for action: WebPage.NavigationAction, preferences: inout WebPage.NavigationPreferences) async -> WKNavigationActionPolicy {
-        guard action.target == nil, let url = action.request.url else { return .allow }
-        open(url)
+        guard action.target == nil else { return .allow }
+        open(action.request)
         return .cancel
     }
 }

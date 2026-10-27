@@ -94,3 +94,13 @@ private func tabsFile() -> URL {
     let background = try await page.callJavaScript("return getComputedStyle(document.documentElement).backgroundColor") as? String
     #expect(background == "rgb(24, 26, 27)")
 }
+
+@Test func switchingTabsClosesTheCommandBar() {
+    let browser = Browser(file: tabsFile())
+    browser.open(URL(string: "https://a.com")!)
+    browser.open(URL(string: "https://b.com")!)
+    browser.showCommandBar(.currentTab)
+    browser.select(offset: 1)
+    #expect(browser.commandBar == nil)
+    #expect(browser.selected?.url.host() == "a.com")
+}
