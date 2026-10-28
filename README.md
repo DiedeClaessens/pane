@@ -28,6 +28,8 @@ To build the shortcut by hand instead, make a shortcut that receives URLs from t
 
 `scripts/reinstall-ipad.sh` rebuilds Pane and reinstalls it on the iPad, so the 7-day signature never runs out. When Pane's signing profile has less than two days left, the script removes it so Xcode fetches a new one. A launch agent runs the script every day at 13:10, or when the Mac wakes up if it was asleep then. It needs the Mac logged in, and the iPad on the cable or on the same Wi-Fi. The log is in `~/Library/Logs/pane-reinstall.log`.
 
+The script reads the iPad's identifier from `scripts/ipad-id`, which git ignores. Find the identifier with `xcrun devicectl list devices` and save it in that file.
+
 Turn it on:
 
 ```sh
