@@ -4,7 +4,12 @@
 
 A personal iPad browser with nothing on screen but the page, like Zen's compact mode. Swipe in from the left edge for the tabs, and swipe right or left anywhere to go back or forward. See [docs/design.md](docs/design.md) for what it does.
 
+> [!WARNING]
+> Pane is a personal project I put together for fun, because I wanted a browser that works exactly the way I like. It is not on the App Store and never will be. It gets no security fixes or regular updates, so I don't recommend using it as your browser. Read the code or borrow ideas from it if you like.
+
 ## Run it on your iPad
+
+You need a Mac with Xcode 27 and an iPad on iPadOS 27 or later.
 
 1. Connect the iPad with a cable and open `Pane.xcodeproj` in Xcode.
 2. On the iPad, turn on Settings > Privacy & Security > Developer Mode (it appears after the first connection) and restart.
